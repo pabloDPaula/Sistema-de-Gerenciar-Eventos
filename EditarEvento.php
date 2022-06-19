@@ -1,0 +1,181 @@
+<?php
+include_once('config.php');
+session_start();
+
+//Caso a variável email e senha de SESSION não exista, redireciona para a tela de login
+if ((!isset($_SESSION['email']) == true) and (!isset($_SESSION['senha']) == true)) {
+    header('location: deslogar.php');
+}{
+
+    $emailLogado = $_SESSION['email'];
+    $senhaLogado = $_SESSION['senha'];
+
+    // Busca no banco de dados o nome do usuario para mostrar na tela e o idUsuario para usar posteriormente
+    $usuario = "SELECT idUsuario, nome FROM usuarios WHERE email='$emailLogado' AND senha = '$senhaLogado'";
+    $resultUsuario = $conexao->query($usuario);
+
+    while ($usuarioDB = mysqli_fetch_assoc($resultUsuario)) {
+        $idUsuario = $usuarioDB['idUsuario'];
+        $nomeUsuario = $usuarioDB['nome'];
+    }
+
+    
+    //Pega o idEvento recebido pela página MeusEventos caso exista e busca todos os dados desse evento para exibir
+    if (!empty($_GET['idEvento'])) {
+        $idEvento = $_GET['idEvento'];
+        $evento = "SELECT * FROM eventos WHERE idEvento=$idEvento";
+        $result = $conexao->query($evento);
+
+        while ($eventoDB = mysqli_fetch_assoc($result)) {
+            $nomeEvento = $eventoDB['nome'];
+            $descricao = $eventoDB['descricao'];
+            $horaFim = $eventoDB['horaFim'];
+            $horaInicio = $eventoDB['horaInicio'];
+            $dataInicio = $eventoDB['dataInicio'];
+            $dataFim = $eventoDB['dataFim'];
+        }
+    }
+    // Verifica se exista uma requisição POST no botão submit para executar o sql de editar evento
+    if(isset($_POST["submit"])){
+        $idEvento = $_POST['idEvento'];
+        $nomeEvento = $_POST['nome'];
+        $descricao = $_POST['descricao'];
+        $horaInicio = $_POST['horaInicio'];
+        $horafim = $_POST['horaFim'];
+        $dataInicio = $_POST['dataInicio'];
+        $dataFim = $_POST['dataFim'];
+        
+       $evento = "UPDATE eventos SET descricao = '$descricao',horaInicio = '$horaInicio', horaFim='$horafim',dataInicio = '$dataInicio',dataFim = '$dataFim', nome = '$nomeEvento' WHERE idEvento = $idEvento";
+       $result = $conexao->query($evento);
+
+       header('location: MeusEventos.php');
+    }
+}
+?>
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formulário</title>
+    <!--   Scripts bootstrap-->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-0evHe/X+R7YkIZDRvuzKMRqM+OrBnVFBL6DOitfPri4tjfHxaWutUpFmBp4vmVor" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0-beta1/dist/js/bootstrap.bundle.min.js" integrity="sha384-pprn3073KE6tl6bjs2QrFaJGz5/SUsLqktiwsUTF55Jfv3qYSDhgCecCxMW52nD2" crossorigin="anonymous"></script>
+
+    <!--   Scripts do jquery-->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.15/jquery.mask.min.js"></script>
+
+    <style>
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        .conteudo {
+            width: 800px;
+            padding-bottom: 150px;
+            background-color: #1C1C1C;
+        }
+
+        h2 {
+            color: #F0F3F4;
+            text-align: center;
+        }
+
+        label {
+            color: #F0F3F4;
+            text-align: left;
+        }
+
+    </style>
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand">Bem vindo, <?php echo $nomeUsuario ?></a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse justify-content-center" id="navbarNavDropdown">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="home.php">Início</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="calendario.php">Calendário</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="MeusEventos.php">Meus Eventos</a>
+                    </li>
+                    <li class="nav-item dropdown ">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            Perfil
+                        </a>
+                        <ul class="dropdown-menu " aria-labelledby="navbarDropdown">
+                            <li><a class="dropdown-item" href="#">Minha conta</a></li>
+                            <li><a class="dropdown-item" href="deslogar.php">Sair</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    <div class="container conteudo mt-5 mb-4">
+        <div class="row p-5">
+            <h2 class=""><strong>Editar Evento</strong></h2>
+        </div>
+        <div class="row p-5">
+            <form style="width: 800px;  margin-left: auto; margin-right: auto;" action="EditarEvento.php" method="POST">
+                <input type="text" class="invisible" name="idEvento" <?php echo "value='$idEvento'" ?>>
+                <div class="form-group row mb-3 mt-3 ">
+                    <label for="nome" class="col-sm-3 col-form-label">Nome</label>
+                    <div class="col-sm-9">
+                        <input type="text" class="form-control" id="nome" name="nome" <?php echo "value='$nomeEvento'" ?> >
+                    </div>
+                </div>
+                <div class="form-group row mb-3">
+                    <label for="descricao" class="col-sm-3 col-form-label">Descrição</label>
+                    <div class="col-sm-9">
+                        <div class="form-group">
+                            <textarea class="form-control" id="descricao" name="descricao" rows="4" ><?php echo $descricao ?></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group row mb-3">
+                    <label for="dataInicio" class="col-sm-3 col-form-label">Data de Início</label>
+                    <div class="col-sm-3">
+                        <input type="date" class="form-control" id="dataInicio" name="dataInicio" <?php echo "value='$dataInicio'" ?>>
+                    </div>
+                    <label for="dataFim" class="col-sm-3 col-form-label">Data de Término</label>
+                    <div class="col-sm-3">
+                        <input type="date" class="form-control" id="dataFim" name="dataFim" <?php echo "value='$dataFim'" ?>>
+                    </div>
+                </div>
+                <div class="form-group row mb-3">
+                    <label for="horaInicio" class="col-sm-3 col-form-label">Hora de Início</label>
+                    <div class="col-sm-3">
+                        <input type="time" class="form-control" id="horaInicio" name="horaInicio" <?php echo "value=$horaInicio" ?>  >
+                    </div>
+                    <label for="horaFim" class="col-sm-3 col-form-label">Hora de Término</label>
+                    <div class="col-sm-3">
+                        <input type="time" class="form-control" id="horaFim" name="horaFim" <?php echo "value=$horaFim" ?>   >
+                    </div>
+                </div>
+                <div class="form-group row pt-4">
+                    <div class="col-sm-10">
+                        <a class="btn btn-secondary" href="MeusEventos.php">Voltar</a>
+                    </div>
+                    <div class="col-sm">
+                        <button type="submit" name="submit" class="btn btn-warning ms-4">Editar</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    </div>
+</body>
+
+</html>
